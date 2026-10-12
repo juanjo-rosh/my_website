@@ -1,18 +1,8 @@
 /* ========================================================= */
 /* THEME TOGGLER                                             */
 /* ========================================================= */
-
-const getPreferredTheme = () => {
-    const stored = localStorage.getItem("theme");
-    if (stored) return stored;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-};
-
-const setTheme = theme => {
-    document.documentElement.setAttribute("data-bs-theme", theme);
-    localStorage.setItem("theme", theme);
-    updateIcon(theme);
-};
+/* The initial theme is applied by an inline script in <head>
+   so the page doesn't flash light mode before this file loads. */
 
 const updateIcon = theme => {
     const icon = document.getElementById("theme-icon");
@@ -22,15 +12,37 @@ const updateIcon = theme => {
     icon.classList.add(theme === "dark" ? "bi-moon-stars-fill" : "bi-sun-fill");
 };
 
-setTheme(getPreferredTheme());
+const setTheme = theme => {
+    document.documentElement.setAttribute("data-bs-theme", theme);
+    try { localStorage.setItem("theme", theme); } catch (e) {}
+    updateIcon(theme);
+};
 
-document.addEventListener("DOMContentLoaded", () => {
-    const themeBtn = document.getElementById("theme-toggle");
-    themeBtn.addEventListener("click", () => {
-        const current = document.documentElement.getAttribute("data-bs-theme");
-        setTheme(current === "dark" ? "light" : "dark");
+updateIcon(document.documentElement.getAttribute("data-bs-theme"));
+
+document.getElementById("theme-toggle").addEventListener("click", () => {
+    const current = document.documentElement.getAttribute("data-bs-theme");
+    setTheme(current === "dark" ? "light" : "dark");
+});
+
+/* ========================================================= */
+/* MOBILE MENU: close after tapping a link                   */
+/* ========================================================= */
+
+const navMenu = document.getElementById("navMenu");
+navMenu.querySelectorAll(".nav-link").forEach(link => {
+    link.addEventListener("click", () => {
+        if (navMenu.classList.contains("show")) {
+            bootstrap.Collapse.getOrCreateInstance(navMenu).hide();
+        }
     });
 });
+
+/* ========================================================= */
+/* FOOTER YEAR                                               */
+/* ========================================================= */
+
+document.getElementById("year").textContent = new Date().getFullYear();
 
 /* ========================================================= */
 /* TYPING ANIMATION                                          */
@@ -47,8 +59,6 @@ const messages = [
 let msgIdx = 0, charIdx = 0;
 
 function type() {
-    if (!typingElement) return;
-
     if (charIdx <= messages[msgIdx].length) {
         typingElement.textContent = messages[msgIdx].substring(0, charIdx++);
         setTimeout(type, 80);
@@ -58,8 +68,6 @@ function type() {
 }
 
 function erase() {
-    if (!typingElement) return;
-
     if (charIdx >= 0) {
         typingElement.textContent = messages[msgIdx].substring(0, charIdx--);
         setTimeout(erase, 50);
@@ -69,19 +77,10 @@ function erase() {
     }
 }
 
-type();
-
-/* ========================================================= */
-/* RANDOM AVATAR (DiceBear - Notionists Neutral)             */
-/* ========================================================= */
-
-document.addEventListener("DOMContentLoaded", () => {
-    const avatar = document.getElementById("random-avatar");
-    if (!avatar) return;
-
-    // Create a random seed on each page load
-    const seed = Math.random().toString(36).substring(2, 12);
-
-    avatar.src = `https://api.dicebear.com/9.x/notionists-neutral/svg?seed=${seed}&backgroundType=gradientLinear,solid`;
-});
-/* ========================================================= */
+if (typingElement) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        typingElement.textContent = messages[0];
+    } else {
+        type();
+    }
+}
